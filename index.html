@@ -1,13 +1,16 @@
-<!DOCTYPE html>
+
 <html>
 <head>
 	<title>Soundcloud Api example</title>
 </head>
 <body>
 
-<h1>Soundcloud API Example - Load an song into an audio buffer</h1>
-<h3>Click a track to play</h3>
+<h1>Soundcloud API Example - Load a song into an audio buffer</h1>
 <ul id=track-list></ul>
+
+<button onclick=stop();>STOP</button>
+
+<div id="log"></div>
 
 <script type="text/javascript" src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
 <script type="text/javascript" src="tone.min.js"></script>
@@ -17,7 +20,8 @@
 var soundCloudClientId = '7258ff07f16ddd167b55b8f9b9a3ed33';
 var words = ['cheese', 'banana', 'tea', 'africa', 'oak']
 var query = words[Math.floor(Math.random()*words.length)]
-
+var log = document.getElementById('log');
+var sampler;
 
 // Start SC API using your client ID
 SC.initialize({
@@ -46,10 +50,11 @@ SC.get('/tracks', {
 
 // Successful response from SC API, list the tracks found
 function successResponse(trackList) {
-	console.log(trackList);
+	append(log, '<p>Tracks loaded using the random search word: <strong>'+ query +'</strong></p><p>Click a track to start playing</p>');
+
 	var list = '';
 	trackList.forEach(function(track){
-		list += '<li onclick=loadAndPlay("'+track.uri.toString()+'")>'+track.title+'</li>'
+		list += '<li onclick=loadAndPlay("'+track.uri+'")>'+track.title+'</li>'
 	});
 	document.getElementById('track-list').innerHTML = list;
 }
@@ -63,18 +68,27 @@ function errorResponse(error){
 
 // Load and play the buffer using it's soundcloud uri
 function loadAndPlay(uri){
-	console.log('playing', uri);
+	append(log, '<p>Loading track from uri: '+uri+'</p>');
 
-	var sampler = new Tone.Sampler({
-		"song" : ''+ uri  +'/stream?client_id='+ soundCloudClientId,
+	sampler = new Tone.Sampler({
+		"song" : ''+ uri.toString()  +'/stream?client_id='+ soundCloudClientId,
 	}).toMaster();
 
 	//listen for when all the samples have loaded
 	Tone.Buffer.onload = function(){
+		append(log, '<p>Now playing track: '+ uri +'</p>');
 		sampler.triggerAttack("song", '0', 0.3);
 	};
 }
 
+function append(el,text) {
+	el.innerHTML = el.innerHTML + text;
+}
+
+function stop(){
+	log.innerHTML = ''
+	sampler.triggerRelease();
+}
 
 
 </script>
