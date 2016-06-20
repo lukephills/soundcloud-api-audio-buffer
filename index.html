@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Soundcloud Api example</title>
+</head>
+<body>
+
+<h1>Soundcloud API Example - Load an song into an audio buffer</h1>
+<h3>Click a track to play</h3>
+<ul id=track-list></ul>
+
+<script type="text/javascript" src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
+<script type="text/javascript" src="http://cdn.tonejs.org/latest/Tone.min.js"></script>
+
+<script>
+
+var soundCloudClientId = '7258ff07f16ddd167b55b8f9b9a3ed33';
+var words = ['cheese', 'banana', 'tea', 'africa', 'oak']
+var query = words[Math.floor(Math.random()*words.length)]
+
+
+// Start SC API using your client ID
+SC.initialize({
+    client_id: soundCloudClientId
+});
+
+
+// Get 10 tracks using the random search query
+SC.get('/tracks', { 
+	q: query, 
+	limit: 10
+}).then(function(tracks)  {
+    if (tracks) {
+        var trackList = [];
+        tracks.forEach(function(track) {
+            if (track.streamable && track.sharing === "public") {
+                trackList.push(track);
+            }
+        });
+        successResponse(trackList);
+    }
+}, function(error) {
+    errorResponse(error);
+});
+
+
+// Successful response from SC API, list the tracks found
+function successResponse(trackList) {
+	console.log(trackList);
+	var list = '';
+	trackList.forEach(function(track){
+		list += '<li onclick=loadAndPlay("'+track.uri.toString()+'")>'+track.title+'</li>'
+	});
+	document.getElementById('track-list').innerHTML = list;
+}
+
+
+// Error response, print error
+function errorResponse(error){
+	console.error(error);
+}
+
+
+// Load and play the buffer using it's soundcloud uri
+function loadAndPlay(uri){
+	console.log('playing', uri);
+
+	var sampler = new Tone.Sampler({
+		"song" : ''+ uri  +'/stream?client_id='+ soundCloudClientId,
+	}).toMaster();
+
+	//listen for when all the samples have loaded
+	Tone.Buffer.onload = function(){
+		sampler.triggerAttack("song", '0', 0.3);
+	};
+}
+
+
+
+</script>
+
+</body>
+</html>
